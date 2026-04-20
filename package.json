@@ -1,0 +1,39 @@
+{
+  "name": "railway-discord-notifier",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Receive Railway deployment webhooks and send rich Discord notifications with Railway log tails.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/server.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AyeCL/railway-discord-notifier.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AyeCL/railway-discord-notifier/issues"
+  },
+  "homepage": "https://github.com/AyeCL/railway-discord-notifier#readme",
+  "keywords": [
+    "railway",
+    "discord",
+    "webhooks",
+    "deployments",
+    "notifications"
+  ],
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "lint": "tsc --noEmit -p tsconfig.json",
+    "test": "node --test --import tsx src/**/*.test.ts"
+  },
+  "engines": {
+    "node": ">=20.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.19",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.3"
+  }
+}
