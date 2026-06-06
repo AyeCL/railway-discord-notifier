@@ -15,6 +15,7 @@ export type AppConfig = {
   ignoreEphemeralEnvironments: boolean;
   requestTimeoutMs: number;
   eventCacheTtlMs: number;
+  semanticDedupeTtlMs: number;
 };
 
 const optional = (value: string | undefined): string | null => {
@@ -78,4 +79,5 @@ export const loadConfig = (env: NodeJS.ProcessEnv = process.env): AppConfig => (
   ignoreEphemeralEnvironments: parseBoolean(env.IGNORE_EPHEMERAL_ENVIRONMENTS, true),
   requestTimeoutMs: parsePositiveInt(env.REQUEST_TIMEOUT_MS, 5000),
   eventCacheTtlMs: parsePositiveInt(env.EVENT_CACHE_TTL_MS, 86_400_000),
+  semanticDedupeTtlMs: parsePositiveInt(env.SEMANTIC_DEDUPE_TTL_MS, 600_000),
 });

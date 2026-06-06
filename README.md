@@ -142,6 +142,8 @@ npm run start
   Discord request timeout. Defaults to `5000`.
 - `EVENT_CACHE_TTL_MS`
   In-memory duplicate suppression window. Defaults to `86400000`.
+- `SEMANTIC_DEDUPE_TTL_MS`
+  In-memory suppression window for repeated same-service, same-environment, same-status, same-commit deploys with different Railway deployment IDs. Defaults to `600000`.
 
 ## Notes
 
