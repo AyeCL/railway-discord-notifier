@@ -2,7 +2,7 @@
   "name": "railway-discord-notifier",
   "version": "0.1.0",
   "private": false,
-  "description": "Receive Railway deployment webhooks and send rich Discord notifications with Railway log tails.",
+  "description": "Receive Railway deployment webhooks and send one-line Discord notifications.",
   "license": "MIT",
   "type": "module",
   "main": "dist/server.js",
@@ -26,7 +26,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "lint": "tsc --noEmit -p tsconfig.json",
-    "test": "node --test --import tsx src/**/*.test.ts"
+    "test": "node --test --import tsx src/*.test.ts"
   },
   "engines": {
     "node": ">=20.18.0"

@@ -69,18 +69,6 @@ export type RailwayDeploymentEvent = {
   };
 };
 
-export type RailwayLogEntry = {
-  timestamp: string | null;
-  message: string;
-  severity: string | null;
-};
-
-export type RailwayEventLogs = {
-  buildLogs: RailwayLogEntry[];
-  runtimeLogs: RailwayLogEntry[];
-  errors: string[];
-};
-
 export const isDeploymentStatus = (value: string): value is DeploymentStatus =>
   (DEPLOYMENT_STATUSES as readonly string[]).includes(value);
 
