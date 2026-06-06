@@ -46,6 +46,7 @@ test("buildDiscordPayload creates a one-line failure alert with Railway link", (
     "🚨 error in `core` in `staging` · [Railway](https://railway.com/project/project-1?environmentId=env-1) · @here"
   );
   assert.equal(payload.embeds, undefined);
+  assert.equal(payload.flags, 4);
   assert.deepEqual(payload.allowed_mentions, { parse: ["everyone"] });
 });
 
@@ -71,5 +72,6 @@ test("buildDiscordPayload creates a one-line success alert with Railway link", (
     payload.content,
     "✅ deploy succeeded for `water` in `production` · [Railway](https://railway.com/project/project-1?environmentId=env-2)"
   );
+  assert.equal(payload.flags, 4);
   assert.deepEqual(payload.allowed_mentions, { parse: [] });
 });

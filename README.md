@@ -146,6 +146,7 @@ npm run start
 ## Notes
 
 - Discord messages are intentionally content-only, without embeds or log tails.
+- Railway links use Discord's `SUPPRESS_EMBEDS` message flag so they stay clickable without showing link previews.
 - Failed and crashed deployments append `@here`; other statuses do not mention anyone.
 - Discord webhook sends automatically retry on `429` and transient `5xx` responses using Discord's returned rate-limit delay when available.
 - Railway's "Test Webhook" button is initiated from the browser and can fail for CORS reasons. A real deploy or replayed payload is a better end-to-end verification path.

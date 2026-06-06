@@ -21,6 +21,7 @@ export type DiscordEmbed = {
 export type DiscordWebhookPayload = {
   content?: string;
   embeds?: DiscordEmbed[];
+  flags?: number;
   allowed_mentions?: {
     parse?: string[];
   };

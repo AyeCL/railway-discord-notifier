@@ -3,6 +3,7 @@ import type { RailwayDeploymentEvent } from "./types.js";
 
 const MAX_DISCORD_CONTENT_LENGTH = 2000;
 const ERROR_MENTION = "@here";
+const SUPPRESS_EMBEDS_FLAG = 1 << 2;
 
 const emojiForStatus = (status: RailwayDeploymentEvent["status"]): string => {
   switch (status) {
@@ -73,6 +74,7 @@ export const buildDiscordPayload = (
 
   return {
     content: truncate(content, MAX_DISCORD_CONTENT_LENGTH),
+    flags: SUPPRESS_EMBEDS_FLAG,
     allowed_mentions: {
       parse: isError ? ["everyone"] : [],
     },
