@@ -1,33 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { AppConfig } from "./config.js";
 import { buildDiscordPayload } from "./format.js";
-import type { RailwayDeploymentEvent, RailwayEventLogs } from "./types.js";
-
-const config: AppConfig = {
-  port: 3000,
-  webhookPath: "/webhooks/railway",
-  webhookSecret: "secret",
-  discordWebhookUrl: "https://discord.example/webhook",
-  failureMention: "@here",
-  railwayApiEndpoint: "https://backboard.railway.com/graphql/v2",
-  railwayApiToken: "token",
-  railwayProjectToken: null,
-  railwayProjectTokenMap: new Map(),
-  environmentAllowlist: new Set(["staging", "production"]),
-  serviceAllowlist: new Set(),
-  serviceDenylist: new Set(["redis"]),
-  statusAllowlist: new Set(["SUCCESS", "FAILED", "CRASHED"]),
-  ignoreEphemeralEnvironments: true,
-  logTailLineLimit: 10,
-  logTailCharLimit: 2200,
-  railwayLogFetchLimit: 120,
-  logFetchMaxAttempts: 3,
-  logFetchRetryMs: 1500,
-  requestTimeoutMs: 5000,
-  eventCacheTtlMs: 60_000,
-};
+import type { RailwayDeploymentEvent } from "./types.js";
 
 const event: RailwayDeploymentEvent = {
   eventType: "Deployment.failed",
@@ -63,29 +38,38 @@ const event: RailwayDeploymentEvent = {
   },
 };
 
-const logs: RailwayEventLogs = {
-  buildLogs: [
-    {
-      timestamp: "2026-04-19T12:00:01.000Z",
-      message: "npm run build",
-      severity: "info",
-    },
-    {
-      timestamp: "2026-04-19T12:00:02.000Z",
-      message: "Type error in src/server.ts",
-      severity: "error",
-    },
-  ],
-  runtimeLogs: [],
-  errors: [],
-};
+test("buildDiscordPayload creates a one-line failure alert with Railway link", () => {
+  const payload = buildDiscordPayload(event);
 
-test("buildDiscordPayload includes mention, dashboard link, and log tail", () => {
-  const payload = buildDiscordPayload(event, logs, config);
+  assert.equal(
+    payload.content,
+    "🚨 error in `core` in `staging` · [Railway](https://railway.com/project/project-1?environmentId=env-1) · @here"
+  );
+  assert.equal(payload.embeds, undefined);
+  assert.deepEqual(payload.allowed_mentions, { parse: ["everyone"] });
+});
 
-  assert.equal(payload.content, "@here");
-  assert.ok(payload.embeds);
-  assert.equal(payload.embeds?.[0]?.url, "https://railway.com/project/project-1?environmentId=env-1");
-  assert.match(payload.embeds?.[0]?.description ?? "", /Build log tail/);
-  assert.match(payload.embeds?.[0]?.description ?? "", /Type error in src\/server\.ts/);
+test("buildDiscordPayload creates a one-line success alert with Railway link", () => {
+  const payload = buildDiscordPayload(
+    {
+      ...event,
+      eventType: "Deployment.deployed",
+      status: "SUCCESS",
+      environment: {
+        id: "env-2",
+        name: "production",
+        isEphemeral: false,
+      },
+      service: {
+        id: "svc-2",
+        name: "water",
+      },
+    }
+  );
+
+  assert.equal(
+    payload.content,
+    "✅ deploy succeeded for `water` in `production` · [Railway](https://railway.com/project/project-1?environmentId=env-2)"
+  );
+  assert.deepEqual(payload.allowed_mentions, { parse: [] });
 });

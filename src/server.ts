@@ -5,17 +5,10 @@ import { sendDiscordWebhook } from "./discord.js";
 import { EventCache } from "./eventCache.js";
 import { buildDiscordPayload } from "./format.js";
 import { extractDeploymentEvent } from "./payload.js";
-import { fetchBuildLogs, fetchRuntimeLogs } from "./railway.js";
-import type { RailwayDeploymentEvent, RailwayEventLogs } from "./types.js";
+import type { RailwayDeploymentEvent } from "./types.js";
 
 const config = loadConfig();
 const eventCache = new EventCache(config.eventCacheTtlMs);
-
-if (!config.railwayApiToken && !config.railwayProjectToken && config.railwayProjectTokenMap.size === 0) {
-  console.warn(
-    `[${new Date().toISOString()}] WARN No Railway token configured. Notifications can still send, but log tails will be unavailable.`
-  );
-}
 
 const log = (level: "INFO" | "WARN" | "ERROR", message: string, details?: Record<string, unknown>) => {
   const prefix = `[${new Date().toISOString()}] ${level}`;
@@ -113,48 +106,6 @@ const shouldNotify = (event: RailwayDeploymentEvent, appConfig: AppConfig): bool
   return true;
 };
 
-const collectLogs = async (
-  event: RailwayDeploymentEvent,
-  appConfig: AppConfig
-): Promise<RailwayEventLogs> => {
-  const result: RailwayEventLogs = {
-    buildLogs: [],
-    runtimeLogs: [],
-    errors: [],
-  };
-
-  if (event.status !== "FAILED" && event.status !== "CRASHED") {
-    return result;
-  }
-
-  const tasks: Array<Promise<void>> = [];
-
-  if (event.status === "FAILED") {
-    tasks.push(
-      fetchBuildLogs(event, appConfig)
-        .then((logs) => {
-          result.buildLogs = logs;
-        })
-        .catch((error) => {
-          result.errors.push(error instanceof Error ? error.message : String(error));
-        })
-    );
-  }
-
-  tasks.push(
-    fetchRuntimeLogs(event, appConfig)
-      .then((logs) => {
-        result.runtimeLogs = logs;
-      })
-      .catch((error) => {
-        result.errors.push(error instanceof Error ? error.message : String(error));
-      })
-  );
-
-  await Promise.all(tasks);
-  return result;
-};
-
 const processWebhook = async (payload: unknown, appConfig: AppConfig): Promise<void> => {
   const event = extractDeploymentEvent(payload);
   if (!event) {
@@ -180,8 +131,7 @@ const processWebhook = async (payload: unknown, appConfig: AppConfig): Promise<v
   }
 
   try {
-    const logs = await collectLogs(event, appConfig);
-    const discordPayload = buildDiscordPayload(event, logs, appConfig);
+    const discordPayload = buildDiscordPayload(event);
     await sendDiscordWebhook(discordPayload, appConfig);
 
     log("INFO", "Sent Discord notification.", {
