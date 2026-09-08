@@ -6,13 +6,16 @@ import { sendDiscordWebhook } from "./discord.js";
 import { EventCache } from "./eventCache.js";
 import { buildDiscordPayload } from "./format.js";
 import { extractDeploymentEvent } from "./payload.js";
+import { createPublishingWatchdog } from "./publishingWatchdog.js";
 import type { RailwayDeploymentEvent } from "./types.js";
 
 const config = loadConfig();
-const deploymentEventCache = new EventCache(config.eventCacheTtlMs);
-const semanticEventCache = new EventCache(config.semanticDedupeTtlMs);
 
-const log = (level: "INFO" | "WARN" | "ERROR", message: string, details?: Record<string, unknown>) => {
+const log = (
+  level: "INFO" | "WARN" | "ERROR",
+  message: string,
+  details?: Readonly<Record<string, unknown>>,
+) => {
   const prefix = `[${new Date().toISOString()}] ${level}`;
   if (!details || Object.keys(details).length === 0) {
     console.log(`${prefix} ${message}`);
@@ -21,6 +24,12 @@ const log = (level: "INFO" | "WARN" | "ERROR", message: string, details?: Record
 
   console.log(`${prefix} ${message} ${JSON.stringify(details)}`);
 };
+
+const deploymentEventCache = new EventCache(config.eventCacheTtlMs);
+const semanticEventCache = new EventCache(config.semanticDedupeTtlMs);
+const publishingWatchdog = createPublishingWatchdog(config, {
+  logger: (level, message, details) => log(level, message, details),
+});
 
 const normalizePath = (value: string): string =>
   value.length > 1 ? value.replace(/\/+$/, "") : value;
@@ -204,8 +213,9 @@ const server = createServer(async (request, response) => {
   sendJson(response, 202, { accepted: true });
 
   processWebhook(payload, config).catch((error) => {
+    void error;
     log("ERROR", "Failed to process Railway webhook.", {
-      error: error instanceof Error ? error.message : String(error),
+      errorCode: "railway_webhook_processing_failed",
     });
   });
 });
@@ -215,4 +225,18 @@ server.listen(config.port, () => {
     port: config.port,
     webhookPath: config.webhookPath,
   });
+  if (publishingWatchdog.enabled) {
+    publishingWatchdog.start();
+    log("INFO", "Publishing watchdog polling enabled.", {
+      pollIntervalMs: config.watchdogPollIntervalMs,
+    });
+  }
 });
+
+const shutdown = () => {
+  publishingWatchdog.stop();
+  server.close(() => process.exit(0));
+};
+
+process.once("SIGINT", shutdown);
+process.once("SIGTERM", shutdown);
