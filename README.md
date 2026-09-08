@@ -154,6 +154,37 @@ npm run start
 - Railway's "Test Webhook" button is initiated from the browser and can fail for CORS reasons. A real deploy or replayed payload is a better end-to-end verification path.
 - Duplicate suppression is in-memory right now. That keeps the service tiny and portable, but it is not cross-instance durable.
 
+## Scheduled publishing watchdog
+
+The notifier can independently poll Youanai Core for the scheduled-publishing
+watchdog. Core owns durable per-job incident identity and notification delivery;
+this service only checks the bounded scan contract and reports when Core cannot
+complete a scan.
+
+Configure `WATCHDOG_CORE_URL` and `WATCHDOG_SECRET` together to enable the
+poller. The URL must be an HTTPS endpoint without query parameters or embedded
+credentials. The notifier sends one authenticated `POST` every 60 seconds by
+default, skips overlapping polls, and treats stale, future, malformed, or
+delivery-failure responses as failed checks. It makes no immediate retry after
+an ambiguous Core timeout.
+
+`WATCHDOG_DISCORD_WEBHOOK_URL` is a separate operational Discord webhook used
+after three consecutive failed checks. A confirmed fallback delivery repeats
+no more than once per 30 minutes; an unconfirmed attempt retries after 60
+seconds. One recovery message is sent after the first valid response and is
+retried after 60 seconds until confirmed. The fallback payload contains only
+monitor-health metadata and disables mentions; it never forwards per-job Core
+content. Discord sends use `wait=true` and only count as delivered when the
+response contains valid message and channel snowflake IDs.
+
+Fallback episode state is in memory, so a notifier restart can repeat one
+outage episode after the configured threshold. The fallback path cannot provide
+exactly-once delivery across an ambiguous network response. If Core and this
+notifier fail together, no Core poll can report that failure; if Discord is
+unavailable, delivery cannot be confirmed. Successful Core scans and their
+independent PostHog heartbeat remain the monitor-of-monitor path for a stopped
+notifier.
+
 ## Documentation References
 
 - [Railway Webhooks](https://docs.railway.com/observability/webhooks)
